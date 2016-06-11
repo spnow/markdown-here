@@ -1,5 +1,5 @@
 /*
- * Copyright Adam Pritchard 2013
+ * Copyright Adam Pritchard 2014
  * MIT License : http://adampritchard.mit-license.org/
  */
 
@@ -266,6 +266,13 @@ describe('Utils', function() {
 
       Utils.getLocalFile('../options.html', callback);
     });
+
+    it('should supply an error arg to callback if file not found', function(done) {
+      Utils.getLocalFile('badfilename', function(val, err) {
+        expect(err).to.be.ok;
+        done();
+      });
+    });
   });
 
   describe('getLocalFileAsBase64', function() {
@@ -278,6 +285,13 @@ describe('Utils', function() {
       };
 
       Utils.getLocalFileAsBase64('../images/icon16.png', callback);
+    });
+
+    it('should supply an error arg to callback if file not found', function(done) {
+      Utils.getLocalFile('badfilename', function(val, err) {
+        expect(err).to.be.ok;
+        done();
+      });
     });
   });
 
@@ -418,6 +432,128 @@ describe('Utils', function() {
         done();
       }, ctx);
       fn();
+    });
+  });
+
+  describe('getMessage', function() {
+    it('should return a string', function() {
+      // Since the exact string retuned depends on the current browser locale,
+      // we'll just check that some string is returned.
+      expect(Utils.getMessage('options_page__page_title')).to.be.a('string');
+    });
+
+    it('should throw on bad message ID', function() {
+      var fn = _.partial(Utils.getMessage, 'BAADF00D');
+      expect(fn).to.throw(Error);
+    });
+  });
+
+  describe('registerStringBundleLoadListener', function() {
+    it('should get called eventually', function(done) {
+      Utils.registerStringBundleLoadListener(done);
+    });
+  });
+
+  describe('getMoz/SafariStringBundle', function() {
+    it('should get the string bundle', function(done) {
+      if (typeof(chrome) !== 'undefined') {
+        // not applicable
+        done();
+        return;
+      }
+      else if (typeof(safari) !== 'undefined') {
+        Utils.getSafariStringBundle(function(data, err) {
+          expect(err).to.not.be.ok;
+          expect(data).to.be.an('object');
+          done();
+        });
+      }
+      else { // Mozilla
+        var data = Utils.getMozStringBundle();
+        if (data) {
+          expect(data).to.be.an('object');
+          done();
+        }
+        else {
+          // HACK: make a call to the privileged script
+          Utils.makeRequestToPrivilegedScript(document, {action: 'get-string-bundle'}, function(response) {
+            expect(response).to.be.an('object');
+            done();
+          });
+        }
+      }
+    });
+  });
+
+  describe('walkDOM', function() {
+    beforeEach(function() {
+      $('body').append($('<div id="test-container" style="display:none"><div id="test-elem"></div></div>'));
+    });
+
+    afterEach(function() {
+      $('#test-container').remove();
+    });
+
+    it('should find an element in the DOM', function() {
+      var found = false;
+      Utils.walkDOM($('body')[0], function(node) {
+        found = found || node.id === 'test-elem';
+      });
+      expect(found).to.be.true;
+    });
+  });
+
+  describe('utf8StringToBase64', function() {
+    it('should correctly encode a foreign-character string', function() {
+      var str = 'hello, こんにちは';
+      var base64 = 'aGVsbG8sIOOBk+OCk+OBq+OBoeOBrw==';
+      expect(Utils.utf8StringToBase64(str)).to.equal(base64);
+    });
+  });
+
+  describe('base64ToUTF8String', function() {
+    it('should correctly encode a foreign-character string', function() {
+      var str = 'این یک جمله آزمون است.';
+      var base64 = '2KfbjNmGINuM2qkg2KzZhdmE2Ycg2KLYstmF2YjZhiDYp9iz2Kou';
+      expect(Utils.base64ToUTF8String(base64)).to.equal(str);
+    });
+  });
+
+  describe('rangeIntersectsNode', function() {
+    beforeEach(function() {
+      $('body').append($('<div id="test-container" style="display:none"><div id="test-elem-1"></div><div id="test-elem-2"></div></div>'));
+    });
+
+    afterEach(function() {
+      $('#test-container').remove();
+    });
+
+    it('should detect a node in a range', function() {
+      var range = document.createRange();
+      range.selectNode($('#test-container')[0]);
+
+      // Check the node that is selected.
+      expect(Utils.rangeIntersectsNode(range, $('#test-container')[0])).to.be.true;
+
+      // Check a node that is within the node that is selected.
+      expect(Utils.rangeIntersectsNode(range, $('#test-elem-2')[0])).to.be.true;
+    });
+
+    it('should not detect a node not in a range', function() {
+      var range = document.createRange();
+      range.selectNode($('#test-elem-1')[0]);
+
+      // The parent of the selected node *is* intersected.
+      expect(Utils.rangeIntersectsNode(range, $('#test-container')[0])).to.be.true;
+
+      // The sibling of the selected node *is not* intersected.
+      expect(Utils.rangeIntersectsNode(range, $('#test-elem-2')[0])).to.be.false;
+
+      // I have found that Range.intersectsNode is broken on Chrome. I'm adding
+      // test to see if/when it gets fixed.
+      if (typeof(window.chrome) !== 'undefined') {
+        expect(range.intersectsNode($('#test-elem-2')[0])).to.be.true;
+      }
     });
   });
 

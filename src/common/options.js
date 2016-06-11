@@ -1,12 +1,13 @@
 /*
- * Copyright Adam Pritchard 2013
+ * Copyright Adam Pritchard 2015
  * MIT License : http://adampritchard.mit-license.org/
  */
 
 "use strict";
-/*global OptionsStore:false, chrome:false, markdownRender:false, $:false,
+/*jshint browser:true, jquery:true, sub:true */
+/*global OptionsStore:false, chrome:false, markdownRender:false,
   htmlToText:false, marked:false, hljs:false, markdownHere:false, Utils:false,
-  MdhHtmlToText:false*/
+  MdhHtmlToText:false */
 
 /*
  * Main script file for the options page.
@@ -14,10 +15,13 @@
 
 var cssEdit, cssSyntaxEdit, cssSyntaxSelect, rawMarkdownIframe, savedMsg,
     mathEnable, mathEdit, hotkeyShift, hotkeyCtrl, hotkeyAlt, hotkeyKey,
-    forgotToRenderCheckEnabled, loaded = false;
+    forgotToRenderCheckEnabled, headerAnchorsEnabled, gfmLineBreaksEnabled,
+    loaded = false;
 
 function onLoad() {
   var xhr;
+
+  localize();
 
   // Show/hide elements depending on platform
   showPlatformElements();
@@ -35,6 +39,8 @@ function onLoad() {
   hotkeyAlt = document.getElementById('hotkey-alt');
   hotkeyKey = document.getElementById('hotkey-key');
   forgotToRenderCheckEnabled = document.getElementById('forgot-to-render-check-enabled');
+  headerAnchorsEnabled = document.getElementById('header-anchors-enabled');
+  gfmLineBreaksEnabled = document.getElementById('gfm-line-breaks-enabled');
 
   //
   // Syntax highlighting styles and selection
@@ -53,7 +59,7 @@ function onLoad() {
         cssSyntaxSelect.options.add(new Option(name, syntaxStyles[name]));
       }
 
-      cssSyntaxSelect.options.add(new Option('Currently in use', ''));
+      cssSyntaxSelect.options.add(new Option(Utils.getMessage('currently_in_use'), ''));
       cssSyntaxSelect.selectedIndex = cssSyntaxSelect.options.length - 1;
 
       cssSyntaxSelect.addEventListener('change', cssSyntaxSelectChange);
@@ -81,6 +87,10 @@ function onLoad() {
 
     forgotToRenderCheckEnabled.checked = prefs['forgot-to-render-check-enabled'];
 
+    headerAnchorsEnabled.checked = prefs['header-anchors-enabled'];
+
+    gfmLineBreaksEnabled.checked = prefs['gfm-line-breaks-enabled'];
+
     // Start watching for changes to the styles.
     setInterval(checkChange, 100);
   });
@@ -107,19 +117,13 @@ function onLoad() {
   // of extension packages.
 
   // Check if our test file exists.
-  // Note: Using $.ajax won't work because for local requests Firefox sets
-  // status to 0 even on success. jQuery interprets this as an error.
-  xhr = new XMLHttpRequest();
-  xhr.open('HEAD', './test/index.html');
-  // If we don't set the mimetype, Firefox will complain.
-  xhr.overrideMimeType('text/plain');
-  xhr.onreadystatechange = function() {
-    if (this.readyState === this.DONE && !this.responseText) {
+  Utils.getLocalFile('./test/index.html', 'text/html', function(_, err) {
+    // The test files aren't present, so hide the button.
+    if (err) {
       // The test files aren't present, so hide the button.
       $('#tests-link').hide();
     }
-  };
-  xhr.send();
+  });
 
   loaded = true;
 }
@@ -141,18 +145,57 @@ function previewIframeLoaded() {
 document.addEventListener('options-iframe-loaded', previewIframeLoaded);
 
 
+function localize() {
+  Utils.registerStringBundleLoadListener(function localizeHelper() {
+    $('[data-i18n]').each(function() {
+      var messageID = 'options_page__' + $(this).data('i18n');
+      if (this.tagName.toUpperCase() === 'TITLE') {
+        this.innerText = Utils.getMessage(messageID);
+      }
+      else {
+        Utils.saferSetInnerHTML(this, Utils.getMessage(messageID));
+      }
+    });
+
+    // Take this opportunity to show appropriate size images for the pixel
+    // density. This saves us from having to make the `img` tags in the
+    // translated content more complex.
+    // TODO: Change to media queries (and so use background-image style).
+    if (window.devicePixelRatio === 2) {
+      $('img[src="images/icon16.png"]')
+        .css('width', '16px')
+        .attr('src', 'images/icon32.png');
+      $('img[src="images/icon16-button.png"]')
+        .css('width', '16px')
+        .attr('src', 'images/icon32-button.png');
+      $('img[src="images/icon16-monochrome.png"]')
+        .css('width', '16px')
+        .attr('src', 'images/icon32-monochrome.png');
+      $('img[src="images/icon16-button-monochrome.png"]')
+        .css('width', '16px')
+        .attr('src', 'images/icon32-button-monochrome.png');
+      $('img[src="images/icon16-button-disabled.png"]')
+        .css('width', '16px')
+        .attr('src', 'images/icon32-button-disabled.png');
+    }
+  });
+}
+
+
 // Shows/hide page elements depending on the current platform.
 // E.g., not all usage instructions apply to all clients.
 function showPlatformElements() {
+  /*? if(platform!=='mozilla'){ */
   if (typeof(chrome) !== 'undefined' && typeof(chrome.extension) !== 'undefined') {
     // Webkit-derived platforms
     $('#need-page-reload').css('display', 'none');
   }
-  else {
+  else /*? } */ {
     // Mozilla-derived platforms
     $('#need-page-reload').css('display', '');
   }
 }
+
 
 // If the CSS changes and the Markdown compose box is rendered, update the
 // rendering by toggling twice. If the compose box is not rendered, do nothing.
@@ -165,7 +208,8 @@ function checkChange() {
         cssEdit.value + cssSyntaxEdit.value +
         mathEnable.checked + mathEdit.value +
         hotkeyShift.checked + hotkeyCtrl.checked + hotkeyAlt.checked + hotkeyKey.value +
-        forgotToRenderCheckEnabled.checked;
+        forgotToRenderCheckEnabled.checked + headerAnchorsEnabled.checked +
+        gfmLineBreaksEnabled.checked;
 
   if (newOptions !== lastOptions) {
     // CSS has changed.
@@ -194,7 +238,9 @@ function checkChange() {
                       altKey: hotkeyAlt.checked,
                       key: hotkeyKey.value
                     },
-          'forgot-to-render-check-enabled': forgotToRenderCheckEnabled.checked
+          'forgot-to-render-check-enabled': forgotToRenderCheckEnabled.checked,
+          'header-anchors-enabled': headerAnchorsEnabled.checked,
+          'gfm-line-breaks-enabled': gfmLineBreaksEnabled.checked
         },
         function() {
           updateMarkdownRender();
@@ -352,7 +398,10 @@ function loadChangelist() {
         prevVer = prevVer[1]; // capture group
 
         var prevVerStart = $('#changelist h2').filter(function() { return $(this).text().match(new RegExp('v'+prevVer+'$')); });
-        $('#changelist').find('h1:first').after('<h2>NEW</h2>').nextUntil(prevVerStart).wrapAll('<div class="changelist-new"></div>');
+        $('#changelist').find('h1:first')
+          .after('<h2>' + Utils.getMessage('new_changelist_items') + '</h2>')
+          .nextUntil(prevVerStart)
+          .wrapAll('<div class="changelist-new"></div>');
 
         // Move the changelist section up in the page
         $('#changelist-container').insertAfter('#pagehead');
@@ -407,31 +456,32 @@ function hotkeyChangeHandler() {
   // Set any representations of the hotkey to the new value.
 
   var hotkeyPieces = [];
-  if (hotkeyShift.checked) hotkeyPieces.push('SHIFT');
-  if (hotkeyCtrl.checked) hotkeyPieces.push('CTRL');
-  if (hotkeyAlt.checked) hotkeyPieces.push('ALT');
+  if (hotkeyShift.checked) hotkeyPieces.push(Utils.getMessage('options_page__hotkey_shift_key'));
+  if (hotkeyCtrl.checked) hotkeyPieces.push(Utils.getMessage('options_page__hotkey_ctrl_key'));
+  if (hotkeyAlt.checked) hotkeyPieces.push(Utils.getMessage('options_page__hotkey_alt_key'));
   if (hotkeyKey.value) hotkeyPieces.push(hotkeyKey.value.toString().toUpperCase());
 
-  $('.hotkey-display').each(function(hotkeyElem) {
+  $('.hotkey-display').each(function() {
+    var $hotkeyElem = $(this);
     if (hotkeyKey.value) {
-      if ($(hotkeyElem).parent().hasClass('hotkey-display-wrapper')) {
-        $(hotkeyElem).parent().css({display: ''});
+      if ($hotkeyElem.parent().hasClass('hotkey-display-wrapper')) {
+        $hotkeyElem.parent().css({display: ''});
       }
-      $(hotkeyElem).css({display: ''});
-      $(hotkeyElem).empty();
+      $hotkeyElem.css({display: ''});
+      $hotkeyElem.empty();
 
       $.each(hotkeyPieces, function(idx, piece) {
         if (idx > 0) {
-          $(hotkeyElem).append(document.createTextNode('+'));
+          $hotkeyElem.append(document.createTextNode(Utils.getMessage('options_page__hotkey_plus')));
         }
-        $(hotkeyElem).append('<kbd>').text(piece);
+        $('<kbd>').text(piece).appendTo($hotkeyElem);
       });
     }
     else {
-      if ($(hotkeyElem).parent().hasClass('hotkey-display-wrapper')) {
-        $(hotkeyElem).parent().css({display: 'none'});
+      if ($hotkeyElem.parent().hasClass('hotkey-display-wrapper')) {
+        $hotkeyElem.parent().css({display: 'none'});
       }
-      $(hotkeyElem).css({display: 'none'});
+      $hotkeyElem.css({display: 'none'});
     }
   });
 }

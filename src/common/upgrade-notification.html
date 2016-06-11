@@ -47,7 +47,7 @@
   #markdown-here-upgrade-notification-link {
     font-family: Tahoma, Helvetica, arial, freesans, clean, sans-serif;
     font-size: 16px;
-    color: #482168;
+    color: #3E055F;
   }
 
   #markdown-here-upgrade-notification-content {
@@ -56,14 +56,17 @@
     bottom: 0;
     right: 20px;
     padding: 4px;
-    background-color: rgb(220,202,235);
+    background-color: #DFCCEA;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
-    box-shadow: 0 -1px 10px 2px #482168;
+    box-shadow: 0 -1px 10px 2px #510E79;
     opacity: 0.95;
-    -webkit-transition: opacity 1000ms;
-    -moz-transition: opacity 1000ms;
     transition: opacity 1000ms;
+  }
+
+  #markdown-here-upgrade-notification-link {
+    display: block;
+    padding: 5px;
   }
 
   #markdown-here-upgrade-notification-link:hover {
@@ -71,18 +74,24 @@
     cursor: pointer;
   }
 
+  #markdown-here-upgrade-notification-close {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+  }
+
   #markdown-here-upgrade-notification-close:hover {
     cursor: pointer;
   }
 
   #markdown-here-upgrade-notification-logo {
-    vertical-align: text-bottom;
+    vertical-align: bottom;
   }
 </style>
 <div id="markdown-here-upgrade-notification-content" class="markdown-here-reset">
-  <a id="markdown-here-upgrade-notification-link" class="markdown-here-reset" target="_blank" href="{{optionsURL}}" title="Click to the see the changes in this release">
-    <img id="markdown-here-upgrade-notification-logo" class="markdown-here-reset" src="data:image/png;base64,{{logoBase64}}"/>
-    Markdown Here updated
+  <a id="markdown-here-upgrade-notification-link" class="markdown-here-reset" target="_blank" href="{{optionsURL}}" title="{{upgrade_notification_changes_tooltip}}">
+    <img id="markdown-here-upgrade-notification-logo" class="markdown-here-reset" style="width:16px" src="data:image/png;base64,{{logoBase64}}"/>
+    {{upgrade_notification_text}}
   </a>
-  <a id="markdown-here-upgrade-notification-close" class="markdown-here-reset" href="#" title="Dismiss this notification">&#215;</a>
+  <a id="markdown-here-upgrade-notification-close" class="markdown-here-reset" href="#" title="{{upgrade_notification_dismiss_tooltip}}">&#215;</a>
 </div>

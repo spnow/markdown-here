@@ -1,5 +1,5 @@
 /*
- * Copyright Adam Pritchard 2012
+ * Copyright Adam Pritchard 2013
  * MIT License : http://adampritchard.mit-license.org/
  */
 
@@ -20,8 +20,8 @@ function requestHandler(request, sender, sendResponse) {
   var focusedElem, mdReturn;
 
   if (request && (request.action === 'context-click' ||
-                request.action === 'hotkey' ||
-                request.action === 'button-click')) {
+                  request.action === 'hotkey' ||
+                  request.action === 'button-click')) {
 
     // Check if the focused element is a valid render target
     focusedElem = markdownHere.findFocusedElem(window.document);
@@ -31,7 +31,7 @@ function requestHandler(request, sender, sendResponse) {
     }
 
     if (!markdownHere.elementCanBeRendered(focusedElem)) {
-      alert('The selected field is not valid for Markdown rendering. Please use a rich editor.');
+      alert(Utils.getMessage('invalid_field'));
       return false;
     }
 
@@ -61,7 +61,7 @@ function requestHandler(request, sender, sendResponse) {
     return false;
   }
 }
-chrome.runtime.onMessage.addListener(requestHandler);
+chrome.extension.onMessage.addListener(requestHandler);
 
 
 // The rendering service provided to the content script.
@@ -215,7 +215,7 @@ var hotkeyGetOptionsHandler = function(prefs) {
       // are valid targets. And/or let the hotkey match if the correct type of
       // control has focus.
 
-      focusedElem.addEventListener('keydown', hotkeyHandler, false);
+      focusedElem.addEventListener('keydown', hotkeyHandler, true);
     };
   }
   // else the hotkey is disabled and we'll leave hotkeyIntervalCheck as a no-op
@@ -282,9 +282,16 @@ function showUpgradeNotification(html) {
 
   // Add click handlers so that we can clear the notification.
   var optionsLink = document.querySelector('#markdown-here-upgrade-notification-link');
-  optionsLink.addEventListener('click', function() {
+  optionsLink.addEventListener('click', function(event) {
     clearUpgradeNotification(true);
-    // Allow the default action
+
+    // Only the background script can open the options page tab (without a
+    // bunch of extra permissions and effort).
+    Utils.makeRequestToPrivilegedScript(
+      document,
+      { action: 'open-tab', url: optionsLink.getAttribute('href') });
+
+    event.preventDefault();
   });
 
   var closeLink = document.querySelector('#markdown-here-upgrade-notification-close');

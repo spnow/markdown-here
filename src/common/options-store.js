@@ -1,5 +1,5 @@
 /*
- * Copyright Adam Pritchard 2013
+ * Copyright Adam Pritchard 2015
  * MIT License : http://adampritchard.mit-license.org/
  */
 
@@ -9,6 +9,23 @@
 "use strict";
 /*global module:false, chrome:false, Components:false*/
 
+if (typeof(Utils) === 'undefined' && typeof(Components) !== 'undefined') {
+  var scriptLoader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
+                               .getService(Components.interfaces.mozIJSSubScriptLoader);
+  scriptLoader.loadSubScript('resource://markdown_here_common/utils.js');
+}
+
+// Common defaults
+var DEFAULTS = {
+  'math-enabled': true,
+  'math-value': '<img src="https://chart.googleapis.com/chart?cht=tx&chl={urlmathcode}" alt="{mathcode}">',
+  'hotkey': { shiftKey: false, ctrlKey: true, altKey: true, key: 'M' },
+  'forgot-to-render-check-enabled': false,
+  'header-anchors-enabled': false,
+  'gfm-line-breaks-enabled': true
+};
+
+/*? if(platform!=='mozilla'){ */
 /*
  * Chrome storage helper. Gets around the synchronized value size limit.
  * Overall quota limits still apply (or less, but we should stay well within).
@@ -29,14 +46,7 @@
  * a cross-domain restriction error. Instead use the service provided by the
  * background script.
  */
-
 // TODO: Check for errors. See: https://code.google.com/chrome/extensions/dev/storage.html
-
-
-if (typeof(Utils) === 'undefined' && typeof(Components) !== 'undefined') {
-  Components.utils.import('resource://markdown_here_common/utils.js');
-}
-
 
 var ChromeOptionsStore = {
 
@@ -114,10 +124,12 @@ var ChromeOptionsStore = {
   defaults: {
     'main-css': {'__defaultFromFile__': '/common/default.css', '__mimeType__': 'text/css'},
     'syntax-css': {'__defaultFromFile__': '/common/highlightjs/styles/github.css', '__mimeType__': 'text/css'},
-    'math-enabled': false,
-    'math-value': '<img src="https://chart.googleapis.com/chart?cht=tx&chl={urlmathcode}" alt="{mathcode}">',
-    'hotkey': { shiftKey: false, ctrlKey: true, altKey: true, key: 'M' },
-    'forgot-to-render-check-enabled': false
+    'math-enabled': DEFAULTS['math-enabled'],
+    'math-value': DEFAULTS['math-value'],
+    'hotkey': DEFAULTS['hotkey'],
+    'forgot-to-render-check-enabled': DEFAULTS['forgot-to-render-check-enabled'],
+    'header-anchors-enabled': DEFAULTS['header-anchors-enabled'],
+    'gfm-line-breaks-enabled': DEFAULTS['gfm-line-breaks-enabled']
   },
 
   // Stored string pieces look like: {'key##0': 'the quick ', 'key##1': 'brown fox'}
@@ -247,6 +259,8 @@ var ChromeOptionsStore = {
     });
   }
 };
+/*? } */
+
 
 /*
  * Mozilla preferences storage helper
@@ -271,13 +285,15 @@ var MozillaOptionsStore = {
 
   // The default values or URLs for our various options.
   defaults: {
+    'local-first-run': true,
     'main-css': {'__defaultFromFile__': 'resource://markdown_here_common/default.css', '__mimeType__': 'text/css'},
     'syntax-css': {'__defaultFromFile__': 'resource://markdown_here_common/highlightjs/styles/github.css', '__mimeType__': 'text/css'},
-    'math-enabled': false,
-    'math-value': '<img src="https://chart.googleapis.com/chart?cht=tx&chl={urlmathcode}" alt="{mathcode}">',
-    'hotkey': { shiftKey: false, ctrlKey: true, altKey: true, key: 'M' },
-    'local-first-run': true,
-    'forgot-to-render-check-enabled': false
+    'math-enabled': DEFAULTS['math-enabled'],
+    'math-value': DEFAULTS['math-value'],
+    'hotkey': DEFAULTS['hotkey'],
+    'forgot-to-render-check-enabled': DEFAULTS['forgot-to-render-check-enabled'],
+    'header-anchors-enabled': DEFAULTS['header-anchors-enabled'],
+    'gfm-line-breaks-enabled': DEFAULTS['gfm-line-breaks-enabled']
   },
 
   // This is called both from content and background scripts, and we need vastly
@@ -287,19 +303,39 @@ var MozillaOptionsStore = {
   // directly. Unfortunately, this means duplicating some code from the background
   // service.
   _sendRequest: function(data, callback) { // analogue of chrome.extension.sendMessage
-    var prefs, prefKeys, prefsObj, request, sender, i;
+    var extPrefsBranch, supportString, prefKeys, prefsObj, request, sender, i;
 
     try {
-      prefs = Utils.global.Components.classes['@mozilla.org/preferences-service;1']
-                          .getService(Components.interfaces.nsIPrefService)
-                          .getBranch('extensions.markdown-here.');
+      extPrefsBranch = window.Components.classes['@mozilla.org/preferences-service;1']
+                             .getService(Components.interfaces.nsIPrefService)
+                             .getBranch('extensions.markdown-here.');
+      supportString = Components.classes["@mozilla.org/supports-string;1"]
+                                .createInstance(Components.interfaces.nsISupportsString);
 
       if (data.verb === 'get') {
-        prefKeys = prefs.getChildList('');
+        prefKeys = extPrefsBranch.getChildList('');
         prefsObj = {};
 
         for (i = 0; i < prefKeys.length; i++) {
-          prefsObj[prefKeys[i]] = Utils.global.JSON.parse(prefs.getCharPref(prefKeys[i]));
+          // All of our legitimate prefs should be strings, but issue #237 suggests
+          // that things may sometimes get into a bad state. We will check and delete
+          // and prefs that aren't strings.
+          // https://github.com/adam-p/markdown-here/issues/237
+          if (extPrefsBranch.getPrefType(prefKeys[i]) !== extPrefsBranch.PREF_STRING) {
+            extPrefsBranch.clearUserPref(prefKeys[i]);
+            continue;
+          }
+
+          try {
+            prefsObj[prefKeys[i]] = window.JSON.parse(
+                                      extPrefsBranch.getComplexValue(
+                                        prefKeys[i],
+                                        Components.interfaces.nsISupportsString).data);
+          }
+          catch(e) {
+            // Null values and empty strings will result in JSON exceptions
+            prefsObj[prefKeys[i]] = null;
+          }
         }
 
         callback(prefsObj);
@@ -307,7 +343,11 @@ var MozillaOptionsStore = {
       }
       else if (data.verb === 'set') {
         for (i in data.obj) {
-          prefs.setCharPref(i, Utils.global.JSON.stringify(data.obj[i]));
+          supportString.data = window.JSON.stringify(data.obj[i]);
+          extPrefsBranch.setComplexValue(
+            i,
+            Components.interfaces.nsISupportsString,
+            supportString);
         }
 
         if (callback) callback();
@@ -319,7 +359,7 @@ var MozillaOptionsStore = {
         }
 
         for (i = 0; i < data.obj.length; i++) {
-          prefs.clearUserPref(data.obj[i]);
+          extPrefsBranch.clearUserPref(data.obj[i]);
         }
 
         if (callback) return callback();
@@ -327,9 +367,6 @@ var MozillaOptionsStore = {
       }
     }
     catch (ex) {
-      Utils.consoleLog('Markdown Here: failing back to content script preferences code');
-      Utils.consoleLog(ex);
-
       // This exception was thrown by the Components.classes stuff above, and
       // means that this code is being called from a content script.
       // We need to send a request from this non-privileged context to the
@@ -344,6 +381,7 @@ var MozillaOptionsStore = {
 };
 
 
+/*? if(platform!=='mozilla'){ */
 /*
  * When called from the options page, this is effectively a content script, so
  * we'll have to make calls to the background script in that case.
@@ -438,21 +476,25 @@ var SafariOptionsStore = {
   defaults: {
     'main-css': {'__defaultFromFile__': (typeof(safari) !== 'undefined' ? safari.extension.baseURI : '')+'markdown-here/src/common/default.css', '__mimeType__': 'text/css'},
     'syntax-css': {'__defaultFromFile__': (typeof(safari) !== 'undefined' ? safari.extension.baseURI : '')+'markdown-here/src/common/highlightjs/styles/github.css', '__mimeType__': 'text/css'},
-    'math-enabled': false,
-    'math-value': '<img src="https://chart.googleapis.com/chart?cht=tx&chl={urlmathcode}" alt="{mathcode}">',
-    'hotkey': { shiftKey: false, ctrlKey: true, altKey: true, key: 'M' },
-    'forgot-to-render-check-enabled': false
+    'math-enabled': DEFAULTS['math-enabled'],
+    'math-value': DEFAULTS['math-value'],
+    'hotkey': DEFAULTS['hotkey'],
+    'forgot-to-render-check-enabled': DEFAULTS['forgot-to-render-check-enabled'],
+    'header-anchors-enabled': DEFAULTS['header-anchors-enabled'],
+    'gfm-line-breaks-enabled': DEFAULTS['gfm-line-breaks-enabled']
   }
 };
+/*? } */
 
 
+/*? if(platform!=='mozilla'){ */
 if (typeof(navigator) !== 'undefined' && navigator.userAgent.indexOf('Chrome') >= 0) {
   this.OptionsStore = ChromeOptionsStore;
 }
 else if (typeof(navigator) !== 'undefined' && navigator.userAgent.match(/AppleWebKit.*Version.*Safari/)) {
   this.OptionsStore = SafariOptionsStore;
 }
-else {
+else /*? } */ {
   this.OptionsStore = MozillaOptionsStore;
 }
 
@@ -470,19 +512,25 @@ this.OptionsStore._fillDefaults = function(prefsObj, callback) {
 
   function doNextKey() {
     if (allKeys.length === 0) {
-      // All done
-      return callback(prefsObj);
+      // All done.
+      // Ensure this function is actually asynchronous.
+      Utils.nextTick(function() {
+        callback(prefsObj);
+      });
+      return;
     }
 
     // Keep processing keys (and recurse)
-    return doDefaultForKey(allKeys.pop(), doNextKey);
+    doDefaultForKey(allKeys.pop(), doNextKey);
   }
 
+  // This function may be asynchronous (if XHR occurs) or it may be a straight
+  // recursion.
   function doDefaultForKey(key, callback) {
     // Only take action if the key doesn't already have a value set.
     if (typeof(prefsObj[key]) === 'undefined') {
       if (that.defaults[key].hasOwnProperty('__defaultFromFile__')) {
-        var xhr = new Utils.global.XMLHttpRequest();
+        var xhr = new window.XMLHttpRequest();
 
         if (that.defaults[key]['__mimeType__']) {
           xhr.overrideMimeType(that.defaults[key]['__mimeType__']);
@@ -496,25 +544,25 @@ this.OptionsStore._fillDefaults = function(prefsObj, callback) {
             // Assume 200 OK -- it's just a local call
             prefsObj[key] = this.responseText;
 
-            return callback();
+            callback();
+            return;
           }
         };
 
         xhr.send();
       }
       else {
-        // Make it actually asynchronous
-        Utils.nextTick(function() {
-          prefsObj[key] = that.defaults[key];
-          return callback();
-        });
+        // Set the default.
+        prefsObj[key] = that.defaults[key];
+        // Recurse
+        callback();
+        return;
       }
     }
     else {
-      // Just skip it, but make it asynchronous
-      Utils.nextTick(function() {
-        return callback();
-      });
+      // Key already has a value -- skip it.
+      callback();
+      return;
     }
   }
 };

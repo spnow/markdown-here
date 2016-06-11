@@ -7,31 +7,14 @@
  * Application logic that is common to all (or some) platforms.
  * (And isn't generic enough for utils.js or render-y enough for markdown-render.js,
  * etc.)
- * If this module is being instantiated without a global `window` object being
- * available (providing XMLHttpRequest, for example), then `CommonLogic.global` must
- * be set to an equivalent object by the caller.
+ *
+ * This module assumes that a global `window` is available.
  */
 
 ;(function() {
 
 "use strict";
 /*global module:false, chrome:false, Utils:false*/
-
-var CommonLogic = {};
-
-
-if (typeof(Utils) === 'undefined' && typeof(Components) !== 'undefined') {
-  Components.utils.import('resource://markdown_here_common/utils.js');
-
-  // C.u.import creates only one cached instance of a module, so Utils.global
-  // might already be set elsewhere.
-  if (!Utils.global) {
-    // We're using a closure because CommonLogic.global might not get set until later.
-    Utils.global = function() {
-      return CommonLogic.global;
-    };
-  }
-}
 
 
 var DEBUG = false;
@@ -48,7 +31,7 @@ function debugLog() {
 
 
 /*
- * Gets the forgot-to-render prompt. This must be called from a privileged script.
+ * Gets the upgrade notification. This must be called from a privileged script.
  */
 function getUpgradeNotification(optionsURL, responseCallback) {
   debugLog('getUpgradeNotification', 'getting');
@@ -59,11 +42,14 @@ function getUpgradeNotification(optionsURL, responseCallback) {
     function(html) {
       // Get the logo image data
       Utils.getLocalFileAsBase64(
-        Utils.getLocalURL('/common/images/icon16.png'),
+        Utils.getLocalURL('/common/images/icon32.png'),
         function(logoBase64) {
           // Do some rough template replacement
           html = html.replace('{{optionsURL}}', optionsURL)
-                     .replace('{{logoBase64}}', logoBase64);
+                     .replace('{{logoBase64}}', logoBase64)
+                     .replace('{{upgrade_notification_changes_tooltip}}', Utils.getMessage('upgrade_notification_changes_tooltip'))
+                     .replace('{{upgrade_notification_text}}', Utils.getMessage('upgrade_notification_text'))
+                     .replace('{{upgrade_notification_dismiss_tooltip}}', Utils.getMessage('upgrade_notification_dismiss_tooltip'));
 
           debugLog('getUpgradeNotification', 'got');
           return responseCallback(html);
@@ -88,9 +74,16 @@ function getForgotToRenderPromptContent(responseCallback) {
     Utils.getLocalURL('/common/forgot-to-render-prompt.html'),
     'text/html',
     function(html) {
+      html = html.replace('{{forgot_to_render_prompt_title}}', Utils.getMessage('forgot_to_render_prompt_title'))
+                 .replace('{{forgot_to_render_prompt_info}}', Utils.getMessage('forgot_to_render_prompt_info'))
+                 .replace('{{forgot_to_render_prompt_question}}', Utils.getMessage('forgot_to_render_prompt_question'))
+                 .replace('{{forgot_to_render_prompt_close_hover}}', Utils.getMessage('forgot_to_render_prompt_close_hover'))
+                 .replace('{{forgot_to_render_back_button}}', Utils.getMessage('forgot_to_render_back_button'))
+                 .replace('{{forgot_to_render_send_button}}', Utils.getMessage('forgot_to_render_send_button'));
+
       // Get the logo image data
       Utils.getLocalFileAsBase64(
-        Utils.getLocalURL('/common/images/icon24.png'),
+        Utils.getLocalURL('/common/images/icon48.png'),
         function(logoBase64) {
           // Do some rough template replacement
           html = html.replace('{{logoBase64}}', logoBase64);
@@ -129,8 +122,19 @@ var ESCAPE_KEYCODE = 27;
 
 var WATCHED_PROPERTY = 'markdownHereForgotToRenderWatched';
 
-var FORGOT_TO_RENDER_PROMPT_INFO = "It looks like you wrote this email in Markdown but forgot to make it pretty.";
-var FORGOT_TO_RENDER_PROMPT_QUESTION = "Send it anyway?";
+// Returns the correct selector to use when looking for the Send button.
+// Returns null if forgot-to-render should not be used here.
+function getForgotToRenderButtonSelector(elem) {
+  if (elem.ownerDocument.location.host.indexOf('mail.google.') >= 0) {
+    return '[role="button"][tabindex="1"]';
+  }
+  else if (elem.ownerDocument.location.host.indexOf('inbox.google.') >= 0) {
+    return '[role="button"][tabindex="0"][jsaction$=".send"]';
+  }
+
+  return null;
+}
+
 
 // This function encapsulates the logic required to prevent accidental sending
 // of email that the user wrote in Markdown but forgot to render.
@@ -150,9 +154,9 @@ function forgotToRenderIntervalCheck(focusedElem, MarkdownHere, MdhHtmlToText, m
       * For now we're going to ignore the "or subject field" part.
   */
 
-  // There is only logic for GMail (so far)
-  if (focusedElem.ownerDocument.location.host.indexOf('mail.google.') < 0) {
-    debugLog('forgotToRenderIntervalCheck', 'not Gmail');
+  var forgotToRenderButtonSelector = getForgotToRenderButtonSelector(focusedElem);
+  if (!forgotToRenderButtonSelector) {
+    debugLog('forgotToRenderIntervalCheck', 'not supported');
     return;
   }
 
@@ -184,9 +188,15 @@ function findClosestSendButton(elem) {
   // div in the latter. That means that sometimes we'll be crossing iframe
   // boundaries and sometimes we won't.
 
+  var forgotToRenderButtonSelector = getForgotToRenderButtonSelector(elem);
+  // If we're in this function, this should be non-null, but...
+  if (!forgotToRenderButtonSelector) {
+    return null;
+  }
+
   var sendButton = null;
   while (elem.parentNode && elem.parentNode.nodeType === elem.ELEMENT_NODE) {
-    sendButton = elem.parentNode.querySelector('[role="button"][tabindex="1"]');
+    sendButton = elem.parentNode.querySelector(forgotToRenderButtonSelector);
     if (sendButton) {
       debugLog('findClosestSendButton', 'found');
       return sendButton;
@@ -233,13 +243,28 @@ function setupForgotToRenderInterceptors(composeElem, MdhHtmlToText, marked, pre
     return probablyWritingMarkdown(mdMaybe, marked, prefs);
   };
 
+  // Helper function to look for element within parents up to a certain point.
+  // We use this because sometimes a click even happens on a child element of
+  // the send button, but we still want it to count as a click on the button.
+  var isSendButtonOrChild = function(eventTarget) {
+    var elem = eventTarget;
+    while (elem && elem.nodeType === elem.ELEMENT_NODE &&
+           elem !== composeSendButton.parentNode) {
+      if (elem === composeSendButton) {
+        return true;
+      }
+      elem = elem.parentNode;
+    }
+    return false;
+  };
+
   // NOTE: We are setting the event listeners on the *parent* element of the
   // send button and compose area. This is so that we can capture and prevent
   // propagation to the actual element, thereby preventing Gmail's event
   // listeners from firing.
 
   var composeSendButtonKeyListener = function(event) {
-    if (event.target === composeSendButton &&
+    if (isSendButtonOrChild(event.target) &&
         (event.keyCode === ENTER_KEYCODE || event.keyCode === SPACE_KEYCODE) &&
         shouldIntercept()) {
       // Gmail uses keydown to trigger its send action. Firefox fires keyup even if
@@ -257,7 +282,7 @@ function setupForgotToRenderInterceptors(composeElem, MdhHtmlToText, marked, pre
   };
 
   var composeSendButtonClickListener = function(event) {
-    if (event.target === composeSendButton &&
+    if (isSendButtonOrChild(event.target) &&
         !event[Utils.MARKDOWN_HERE_EVENT] &&
         shouldIntercept()) {
       eatEvent(event);
@@ -412,8 +437,10 @@ function showForgotToRenderPromptAndRespond(composeElem, composeSendButton) {
   if (typeof(composeElem.ownerDocument.defaultView.openDialog) !== 'undefined') {
     var promptParams = {
       inn:{
-        promptInfo: FORGOT_TO_RENDER_PROMPT_INFO,
-        promptQuestion: FORGOT_TO_RENDER_PROMPT_QUESTION},
+        promptInfo: Utils.getMessage('forgot_to_render_prompt_info'),
+        promptQuestion: Utils.getMessage('forgot_to_render_prompt_question'),
+        promptBackButton: Utils.getMessage('forgot_to_render_back_button'),
+        promptSendButton: Utils.getMessage('forgot_to_render_send_button') },
       out:null
     };
     composeElem.ownerDocument.defaultView.openDialog(
@@ -561,21 +588,11 @@ function showHTMLForgotToRenderPrompt(html, composeElem, composeSendButton, call
 
 
 // Expose these functions
+var CommonLogic = {};
 CommonLogic.getUpgradeNotification = getUpgradeNotification;
 CommonLogic.getForgotToRenderPromptContent = getForgotToRenderPromptContent;
 CommonLogic.forgotToRenderIntervalCheck = forgotToRenderIntervalCheck;
 CommonLogic.probablyWritingMarkdown = probablyWritingMarkdown;
-CommonLogic.FORGOT_TO_RENDER_PROMPT_INFO = FORGOT_TO_RENDER_PROMPT_INFO;
-CommonLogic.FORGOT_TO_RENDER_PROMPT_QUESTION = FORGOT_TO_RENDER_PROMPT_QUESTION;
-
-CommonLogic.__defineSetter__('global', function(val) { CommonLogic._global = val; });
-CommonLogic.__defineGetter__('global', function() {
-  if (typeof(CommonLogic._global) === 'function') {
-    return CommonLogic._global.call();
-  }
-  return CommonLogic._global;
-});
-CommonLogic.global = this;
 
 
 var EXPORTED_SYMBOLS = ['CommonLogic'];

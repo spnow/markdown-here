@@ -16,12 +16,14 @@ var markdown_here = {
 
   imports: {},
 
-  // Components.utils is somewhat more performant than mozIJSSubScriptLoader, so
-  // we'll use it when possible. However, Components.utils usually requires
-  // modifications to the source file, which isn't allowed for some 3rd party
-  // code (Highlight.js, in particular) -- in that case we use mozIJSSubScriptLoader.
+  // Components.utils is somewhat more performant than mozIJSSubScriptLoader,
+  // but it doesn't expose the global `window` to the code, which introduces
+  // tons of headaches (see https://github.com/adam-p/markdown-here/issues/141).
+  // The correct way to deal with that is probably to pass `window` into every
+  // single call, but that seems onerous.
   // For details on the difference, see:
   // https://developer.mozilla.org/en-US/docs/Components.utils.import
+  // https://developer.mozilla.org/en-US/Add-ons/Overlay_Extensions/XUL_School/Appendix_D:_Loading_Scripts#The_Sub-Script_Loader
   scriptLoader: Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
                           .getService(Components.interfaces.mozIJSSubScriptLoader),
 
@@ -41,19 +43,19 @@ var markdown_here = {
       // Are we rich-editing?
       /*jshint newcap:false*/
       if (window.GetCurrentEditorType().indexOf('html') < 0) {
-        this.alert('You are using a plain-text compose editor. You must change to a rich editor to use Markdown Here.');
+        this.alert(markdown_here.imports.Utils.getMessage('plain_text_compose'));
         return;
       }
 
       // The focus might not be in the compose box
       if (!markdown_here.imports.markdownHere.elementCanBeRendered(focusedElem)) {
-        this.alert('Please put the cursor into the compose box.');
+        this.alert(markdown_here.imports.Utils.getMessage('cursor_into_compose'));
         return;
       }
     }
     else { // Firefox
       if (!markdown_here.imports.markdownHere.elementCanBeRendered(focusedElem)) {
-        this.alert('The selected field is not valid for Markdown rendering. Please use a rich editor.');
+        this.alert(markdown_here.imports.Utils.getMessage('invalid_field'));
         return;
       }
     }
@@ -87,20 +89,28 @@ var markdown_here = {
   onLoad: function() {
     var contextMenu;
 
-    Components.utils.import('resource://markdown_here_common/utils.js', markdown_here.imports);
-    Components.utils.import('resource://markdown_here_common/common-logic.js', markdown_here.imports);
-    Components.utils.import('resource://markdown_here_common/jsHtmlToText.js', markdown_here.imports);
-    Components.utils.import('resource://markdown_here_common/marked.js', markdown_here.imports);
-    Components.utils.import('resource://markdown_here_common/markdown-here.js', markdown_here.imports);
-    Components.utils.import('resource://markdown_here_common/mdh-html-to-text.js', markdown_here.imports);
-    Components.utils.import('resource://markdown_here_common/markdown-render.js', markdown_here.imports);
-    Components.utils.import('resource://markdown_here_common/options-store.js', markdown_here.imports);
-
-    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/highlightjs/highlight.js', markdown_here.imports);
+    // scriptLoader loads stuff into `window`.
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/utils.js');
+    markdown_here.imports.Utils = window.Utils;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/common-logic.js');
+    markdown_here.imports.CommonLogic = window.CommonLogic;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/jsHtmlToText.js');
+    markdown_here.imports.htmlToText = window.htmlToText;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/marked.js');
+    markdown_here.imports.marked = window.marked;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/markdown-here.js');
+    markdown_here.imports.markdownHere = window.markdownHere;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/mdh-html-to-text.js');
+    markdown_here.imports.MdhHtmlToText = window.MdhHtmlToText;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/markdown-render.js');
+    markdown_here.imports.MarkdownRender = window.MarkdownRender;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/options-store.js');
+    markdown_here.imports.OptionsStore = OptionsStore;
+    markdown_here.scriptLoader.loadSubScript('resource://markdown_here_common/highlightjs/highlight.js');
+    markdown_here.imports.hljs = window.hljs;
 
     // initialization code
     this.initialized = true;
-    this.strings = document.getElementById('markdown_here-strings');
 
     contextMenu = document.getElementById('contentAreaContextMenu');
     if (!contextMenu) contextMenu = document.getElementById('msgComposeContext');
@@ -128,7 +138,7 @@ var markdown_here = {
 
       // Only add a listener if a key is set
       if (prefs.hotkey.key.length === 1) {
-        window.addEventListener('keydown', hotkeyHandler, false);
+        window.addEventListener('keydown', hotkeyHandler, true);
       }
 
       /*
@@ -171,8 +181,10 @@ var markdown_here = {
 
           var promptParams = {
             inn:{
-              promptInfo: markdown_here.imports.CommonLogic.FORGOT_TO_RENDER_PROMPT_INFO,
-              promptQuestion: markdown_here.imports.CommonLogic.FORGOT_TO_RENDER_PROMPT_QUESTION},
+              promptInfo: markdown_here.imports.Utils.getMessage('forgot_to_render_prompt_info'),
+              promptQuestion: markdown_here.imports.Utils.getMessage('forgot_to_render_prompt_question'),
+              promptBackButton: markdown_here.imports.Utils.getMessage('forgot_to_render_back_button'),
+              promptSendButton: markdown_here.imports.Utils.getMessage('forgot_to_render_send_button') },
             out:null
           };
           window.openDialog(
@@ -223,7 +235,6 @@ var markdown_here = {
     }
 
     document.getElementById('context-markdown_here').hidden = !showItem;
-    document.getElementById('context-markdown_here-separator').hidden = !showItem;
   },
 
   log: function(msg) {
@@ -271,26 +282,20 @@ var markdown_here = {
       // Toolbar button
       btn = document.getElementById('toolbarButton-markdown_here');
       if (btn) {
-        var stringsBundle = document.getElementById('markdown_here-strings');
-
         if (show) {
           btn.removeAttribute('disabled');
 
-          if (stringsBundle) {
-            tooltipString = stringsBundle.getString('markdown_hereButton.tooltiptext');
-            if (tooltipString) {
-              btn.setAttribute('tooltiptext', tooltipString);
-            }
+          tooltipString = markdown_here.imports.Utils.getMessage('toggle_button_tooltip');
+          if (tooltipString) {
+            btn.setAttribute('tooltiptext', tooltipString);
           }
         }
         else {
           btn.setAttribute('disabled', 'true');
 
-          if (stringsBundle) {
-            tooltipString = stringsBundle.getString('markdown_hereButton.disabledtooltiptext');
-            if (tooltipString) {
-              btn.setAttribute('tooltiptext', tooltipString);
-            }
+          tooltipString = markdown_here.imports.Utils.getMessage('toggle_button_tooltip_disabled');
+          if (tooltipString) {
+            btn.setAttribute('tooltiptext', tooltipString);
           }
         }
       }

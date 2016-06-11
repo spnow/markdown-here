@@ -1,5 +1,5 @@
 /*
- * Copyright Adam Pritchard 2013
+ * Copyright Adam Pritchard 2015
  * MIT License : http://adampritchard.mit-license.org/
  */
 
@@ -19,8 +19,10 @@ var exports = {};
 if (typeof(htmlToText) === 'undefined' &&
     typeof(Components) !== 'undefined' &&
     typeof(Components.utils) !== 'undefined') {
-  Components.utils.import('resource://markdown_here_common/jsHtmlToText.js');
-  Components.utils.import('resource://markdown_here_common/utils.js');
+  var scriptLoader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
+                               .getService(Components.interfaces.mozIJSSubScriptLoader);
+  scriptLoader.loadSubScript('resource://markdown_here_common/jsHtmlToText.js');
+  scriptLoader.loadSubScript('resource://markdown_here_common/utils.js');
 }
 
 
@@ -142,16 +144,45 @@ MdhHtmlToText.prototype._preprocess = function() {
     this.preprocessInfo.html = convertHTMLtoMarkdown('a', this.preprocessInfo.html);
   }
 
+  // NOTE: Don't use '.' in these regexes and hope to match across newlines. Instead use [\s\S].
+
   // Experimentation has shown some tags that need to be tweaked a little.
   this.preprocessInfo.html =
     this.preprocessInfo.html
-      .replace(/(<\/div>)((?!<div).+?)(<div[^>]*>)/ig, '$1<div>$2</div>$3') // a raw text node without an enclosing <div> won't be handled properly, so add one
-      .replace(/(<\/div>)<div[^>]*><\/div>(<div[^>]*>)/ig, '$1$2') // empty <div> between other <div> elems gets removed
-      .replace(/<div[^>]*><br><\/div>/ig, '<br>') // <div><br></div> --> <br>
-      .replace(/(<div[^>]*>)+/ig, '<br>') // opening <div> --> <br> (but nested <div><div> just gets one <br>)
-      .replace(/<\/div>/ig, '')        // closing </div> --> nothing
-      .replace(/<(img[^>]*)>/ig, '&lt;$1&gt;') // <img> tags --> textual <img> tags
-      .replace(/&nbsp;/ig, ' ');       // &nbsp; --> space
+      // A raw text node without an enclosing <div> won't be handled properly, so enclose them.
+      // At the beginning:
+      .replace(/^((?:(?!<div\b)[\s\S])+)/i, '<div>$1</div>')
+      // In the middle:
+      .replace(/(<\/div>)((?!<div\b)[\s\S]+?)(<div\b[^>]*>)/ig, '$1<div>$2</div>$3')
+      // At the end:
+      // Note: The original, simpler form of this regex -- `([^>]+)$/` was
+      // horribly slow. The new form is fast for both positive and negative
+      // matches. I can't pretend to entirely understand why.
+      // More info: https://stackoverflow.com/questions/31952381/end-of-string-regex-match-too-slow
+      .replace(/^(?=([\s\S]*>))\1([^>]+)$/, '$1<div>$2</div>')
+
+      // empty <div> between other <div> elems gets removed
+      .replace(/(<\/div>)<div\b[^>]*><\/div>(<div[^>]*>)/ig, '$1$2')
+
+      // <div><br></div> --> <br>
+      .replace(/<div\b[^>]*><br\b[^>]*><\/div>/ig, '<br>')
+
+      // A <br> as the last child of a <div> adds no whitespace, so: <br></div> --> </div>
+      // Note: I can't find a reference for this, but testing shows it.
+      // The reason we're testing for this is because we see it in the wild. E.g., issue #251.
+      .replace(/<br\b[^>]*><\/div>/ig, '</div>')
+
+      // closing </div> --> <br> (but nested </div></div> just gets one <br>)
+      .replace(/(<\/div>)+/ig, '<br>')
+
+      // open <div> --> nothing (since we've replaced all the closing tags)
+      .replace(/<div\b[^>]*>/ig, '')
+
+      // <img> tags --> textual <img> tags
+      .replace(/<(img[^>]*)>/ig, '&lt;$1&gt;')
+
+      // &nbsp; --> space
+      .replace(/&nbsp;/ig, ' ');
 };
 
 
@@ -294,6 +325,12 @@ resulting HTML.
 */
 function convertHTMLtoMarkdown(tag, html) {
   if (tag === 'a') {
+    var htmlToRestore = [];
+    html = html.replace(/(`+)[\s\S]+?\1/ig, function($0) {
+      var replacement = Math.random();
+      htmlToRestore.push([replacement, $0]);
+      return replacement;
+    });
     /*
     Make sure we do *not* convert HTML links that are inside of MD links.
     Otherwise we'll have problems like issue #69.
@@ -302,6 +339,7 @@ function convertHTMLtoMarkdown(tag, html) {
       (                 // begin optional prefix capture group
         (?:\]\([^\)]*)  // match an unclosed URL portion of a MD link -- like "...](..."
         |(?:\[[^\]]*)   // match an unclosed name portion of a MD link -- like "...[..."
+        |(?:\[.*\]:.*)  // match the patterns of reflink and nolink -- link "[...]:..."
       )?                // capture group is optional so that we do the "negative" lookbehind -- that is, we can match links that are *not* preceded by the stuff we *don't* want
       <a\s[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>  // an HTML link
     Then the replace callback looks like this:
@@ -312,10 +350,19 @@ function convertHTMLtoMarkdown(tag, html) {
     groups to create the desired MD link.
     */
     html = html.replace(
-      /((?:\]\([^\)]*)|(?:\[[^\]]*))?<a\s[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/ig,
+      /((?:\]\([^\)]*)|(?:\[[^\]]*)|(?:\[.*\]:.*))?<a\s[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/ig,
       function($0, $1, $2, $3) {
         return $1 ? $0 : '['+$3+']('+$2+')';
       });
+
+    for (var i = 0; i < htmlToRestore.length; i++) {
+      html = html.replace(htmlToRestore[i][0], function() {
+          // The replacement argument to `String.replace()` has some magic values: https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String/replace#Specifying_a_string_as_a_parameter
+          // Because we don't control the content of that argument, we either
+          // need to escape dollar signs in it, or use the function version.
+          return htmlToRestore[i][1];
+        });
+    }
   }
   else {
     throw new Error('convertHTMLtoMarkdown: ' + tag + ' is not a supported tag');

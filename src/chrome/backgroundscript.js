@@ -6,7 +6,7 @@
 "use strict";
 /*global chrome:false, OptionsStore:false, MarkdownRender:false,
   marked:false, hljs:false, Utils:false, CommonLogic:false */
-/*jshint devel:true*/
+/*jshint devel:true, browser:true*/
 
 /*
  * Chrome background script.
@@ -17,7 +17,7 @@ function onLoad() {
   // This timeout is a dirty hack to fix bug #119: "Markdown Here Upgrade
   // Notification every time I open Chrome". That issue on Github for details.
   // https://github.com/adam-p/markdown-here/issues/119
-  setTimeout(upgradeCheck, 30000);
+  window.setTimeout(upgradeCheck, 30000);
 }
 
 // In the interest of improved browser load performace, call `onLoad` after a tick.
@@ -54,7 +54,7 @@ function upgradeCheck() {
 // Create the context menu that will signal our main code.
 chrome.contextMenus.create({
   contexts: ['editable'],
-  title: 'Mar&kdown Toggle',
+  title: Utils.getMessage('context_menu_item_with_shortcut'),
   onclick: function(info, tab) {
     chrome.tabs.sendMessage(tab.id, {action: 'context-click'});
   }
@@ -62,7 +62,7 @@ chrome.contextMenus.create({
 
 // Handle rendering requests from the content script.
 // See the comment in markdown-render.js for why we do this.
-chrome.runtime.onMessage.addListener(function(request, sender, responseCallback) {
+chrome.extension.onMessage.addListener(function(request, sender, responseCallback) {
   // The content script can load in a not-real tab (like the search box), which
   // has an invalid `sender.tab` value. We should just ignore these pages.
   if (typeof(sender.tab) === 'undefined' ||
@@ -90,10 +90,28 @@ chrome.runtime.onMessage.addListener(function(request, sender, responseCallback)
   else if (request.action === 'show-toggle-button') {
     if (request.show) {
       chrome.browserAction.enable(sender.tab.id);
+      chrome.browserAction.setTitle({
+        title: Utils.getMessage('toggle_button_tooltip'),
+        tabId: sender.tab.id });
+      chrome.browserAction.setIcon({
+        path: {
+          19: Utils.getLocalURL('/common/images/icon19-button-monochrome.png'),
+          38: Utils.getLocalURL('/common/images/icon38-button-monochrome.png')
+        },
+        tabId: sender.tab.id });
       return false;
     }
     else {
       chrome.browserAction.disable(sender.tab.id);
+      chrome.browserAction.setTitle({
+        title: Utils.getMessage('toggle_button_tooltip_disabled'),
+        tabId: sender.tab.id });
+      chrome.browserAction.setIcon({
+        path: {
+          19: Utils.getLocalURL('/common/images/icon19-button-disabled.png'),
+          38: Utils.getLocalURL('/common/images/icon38-button-disabled.png')
+        },
+        tabId: sender.tab.id });
       return false;
     }
   }
@@ -106,6 +124,12 @@ chrome.runtime.onMessage.addListener(function(request, sender, responseCallback)
       responseCallback({html: html});
     });
     return true;
+  }
+  else if (request.action === 'open-tab') {
+    chrome.tabs.create({
+        'url': request.url
+    });
+    return false;
   }
   else if (request.action === 'test-request') {
     responseCallback('test-request-good');

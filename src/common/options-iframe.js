@@ -1,9 +1,10 @@
 /*
- * Copyright Adam Pritchard 2013
+ * Copyright Adam Pritchard 2015
  * MIT License : http://adampritchard.mit-license.org/
  */
 
 function onLoad() {
+  /*? if(platform!=='mozilla'){ */
   // Chrome and Safari require us to manually load our content script in order
   // to use the button and context menu in the iframe.
   if (typeof(safari) !== 'undefined' || typeof(chrome) !== 'undefined') {
@@ -17,6 +18,7 @@ function onLoad() {
     }
     document.body.appendChild(contentscript);
   }
+  /*? } */
 
   // The body of the iframe needs to have a (collapsed) selection range for
   // Markdown Here to work (simulating focus/cursor).
@@ -26,9 +28,34 @@ function onLoad() {
   sel.removeAllRanges();
   sel.addRange(range);
 
+  // This is an asynchrous call that must complete before we notify the parent
+  // window that we've completed loading.
+  localize();
+}
+document.addEventListener('DOMContentLoaded', onLoad, false);
+
+
+// Basically copied from options.js
+function localize() {
+  Utils.registerStringBundleLoadListener(function localizeHelper() {
+    $('[data-i18n]').each(function() {
+      var messageID = 'options_page__' + $(this).data('i18n');
+      if (this.tagName.toUpperCase() === 'TITLE') {
+        this.innerText = Utils.getMessage(messageID);
+      }
+      else {
+        Utils.saferSetInnerHTML(this, Utils.getMessage(messageID));
+      }
+    });
+
+    notifyIframeLoaded();
+  });
+}
+
+
+function notifyIframeLoaded() {
   // Let our owner page know that we've loaded.
   var e = top.document.createEvent('HTMLEvents');
   e.initEvent('options-iframe-loaded', true, true);
   top.document.dispatchEvent(e);
 }
-document.addEventListener('DOMContentLoaded', onLoad, false);

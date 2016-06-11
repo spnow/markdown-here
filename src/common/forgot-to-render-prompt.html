@@ -47,7 +47,7 @@
 
   #markdown-here-forgot-to-render-background {
     z-index: 90000;
-    position: absolute;
+    position: fixed;
     left: 0px;
     top: 0px;
     height: 100%;
@@ -60,25 +60,25 @@
   #markdown-here-forgot-to-render-prompt {
     display: block;
     z-index: 90001;
-    background-color: rgb(220,202,235);
+    background-color: #DFCCEA;
     box-shadow: 0 4px 16px rgba(0,0,0,.2);
     opacity: 1;
     background-clip: padding-box;
-    position: absolute;
+    position: fixed;
     top: 33%;
     left: 33%;
     width: 33%;
     padding: 1.5em;
     font-family: Tahoma, Helvetica, arial, freesans, clean, sans-serif;
     font-size: 16px;
-    color: #482168;
-    border: thin #482168 solid;
+    color: #3E055F;
+    border: thin #3E055F solid;
   }
 
   #markdown-here-forgot-to-render-head {
     font-size: 1.2em;
     margin-bottom: 0.8em;
-    text-shadow: 1px 1px 1px rgba(72, 33, 104, 0.23);
+    text-shadow: 1px 1px 1px rgba(72, 33, 104, 0.25);
   }
 
   #markdown-here-forgot-to-render-close {
@@ -116,20 +116,22 @@
   <div id="markdown-here-forgot-to-render-prompt">
     <div id="markdown-here-forgot-to-render-head">
       <span>
-        <img id="markdown-here-forgot-to-render-logo" class="markdown-here-reset" src="data:image/png;base64,{{logoBase64}}"/>
-        Forget to toggle Markdown?
+        <img id="markdown-here-forgot-to-render-logo" class="markdown-here-reset" style="width:24px" src="data:image/png;base64,{{logoBase64}}"/>
+        {{forgot_to_render_prompt_title}}
       </span>
-      <a id="markdown-here-forgot-to-render-close" class="markdown-here-reset" href="#" title="Dismiss this notification">&#215;</a>
+      <a id="markdown-here-forgot-to-render-close" class="markdown-here-reset" href="#" title="{{forgot_to_render_prompt_close_hover}}">&#215;</a>
     </div>
     <div>
-      It looks like you wrote this email in Markdown but didn't make it pretty. Send it anyway?
+      {{forgot_to_render_prompt_info}}
+      <br><br>
+      {{forgot_to_render_prompt_question}}
     </div>
     <div id="markdown-here-forgot-to-render-buttons" class="markdown-here-reset" >
       <button id="markdown-here-forgot-to-render-button-back">
-        Back
+        {{forgot_to_render_back_button}}
       </button>
       <button id="markdown-here-forgot-to-render-button-send">
-        Send
+        {{forgot_to_render_send_button}}
       </button>
     </div>
   </div>

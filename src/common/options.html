@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!--
-Copyright Adam Pritchard 2013
+Copyright Adam Pritchard 2015
 MIT License : http://adampritchard.mit-license.org/
 -->
 
@@ -10,14 +10,19 @@ MIT License : http://adampritchard.mit-license.org/
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width"/>
-  <link rel="icon" type="image/png" href="images/icon16.png"/>
+  <link rel="icon" type="image/png" href="images/icon32.png"/>
 
-  <title>Markdown Here Options</title>
+  <title data-i18n="page_title">Markdown Here Options</title>
 
   <style type="text/css">
+  /*
+  The palette can be seen here: http://paletton.com/#uid=64G0u0ks8sIhj-JmfuftVmIzshO
+  */
+
   body {
     font-family: Tahoma, Helvetica, arial, freesans, clean, sans-serif;
     font-size: 14px;
+    color: #14021F;
   }
 
   .pagehead {
@@ -25,11 +30,23 @@ MIT License : http://adampritchard.mit-license.org/
   }
 
   h1 {
-    color: #482168;
-    text-shadow: 1px 1px 1px rgba(72, 33, 104, 0.23);
+    color: #3E055F;
+    text-shadow: 1px 1px 1px rgba(72, 33, 104, 0.25);
     vertical-align: top;
     /* Needs to match the height of the image */
     line-height: 48px;
+  }
+
+  img.text-align {
+    vertical-align: middle;
+  }
+
+  img[src^="images/icon32"] {
+    width: 16px;
+  }
+
+  img[src^="images/icon96"] {
+    width: 48px;
   }
 
   textarea {
@@ -45,12 +62,8 @@ MIT License : http://adampritchard.mit-license.org/
   .control-group {
     float: left;
     width: 45%;
-    width: -webkit-calc(50% - 40px);
-    width: -moz-calc(50% - 40px);
     width: calc(50% - 40px);
     height: 360px;
-    height: -webkit-calc(100% - 40px);
-    height: -moz-calc(100% - 40px);
     height: calc(100% - 40px);
     margin: 10px;
     padding: 10px;
@@ -66,8 +79,6 @@ MIT License : http://adampritchard.mit-license.org/
 
   .control-group > .stretch {
     height: 280px;
-    height: -webkit-calc(100% - 80px);
-    height: -moz-calc(100% - 80px);
     height: calc(100% - 80px);
   }
 
@@ -86,8 +97,8 @@ MIT License : http://adampritchard.mit-license.org/
   .section-title {
     font-size: 1.2em;
     font-weight: bold;
-    color: #482168;
-    text-shadow: 1px 1px 1px rgba(72, 33, 104, 0.23);
+    color: #3E055F;
+    text-shadow: 1px 1px 1px rgba(72, 33, 104, 0.25);
   }
 
   .iframe-container {
@@ -111,12 +122,8 @@ MIT License : http://adampritchard.mit-license.org/
     right: 0;
     font-size: 1.5em;
     padding: 1em;
-    background: -webkit-linear-gradient(right top, rgb(207,182,227) 0%, rgb(255,255,255) 100%);
-    background: -moz-linear-gradient(225deg, rgb(207,182,227), rgb(255,255,255));
-    background: linear-gradient(225deg, rgb(207,182,227), rgb(255,255,255));
-    color: #482168;
-    -webkit-transition: opacity 1000ms;
-    -moz-transition: opacity 1000ms;
+    background: linear-gradient(225deg, #D4AFEA, rgb(255,255,255));
+    color: #510E79;
     transition: opacity 1000ms;
     opacity: 0;
     border-bottom-left-radius: 30px;
@@ -124,8 +131,6 @@ MIT License : http://adampritchard.mit-license.org/
   }
 
   #saved-msg.showing {
-    -webkit-transition: opacity 100ms;
-    -moz-transition: opacity 100ms;
     transition: opacity 100ms;
     opacity: 0.95;
   }
@@ -151,29 +156,22 @@ MIT License : http://adampritchard.mit-license.org/
     top: 1px;
   }
   .purple {
-    color: #FAF5FC;
-    border: solid 1px #2d0f5a;
-    background: -webkit-gradient(linear, left top, left bottom, from(#A022A0), to(#662D91));
-    background: -moz-linear-gradient(270deg, #A022A0, #662D91);
-    background: linear-gradient(270deg, #A022A0, #662D91);
+    color: #EEE;
+    border: solid 1px #3E055F;
+    background: linear-gradient(270deg, #6A1A99, #510E79);
   }
   .purple:hover {
-    background: -webkit-gradient(linear, left top, left bottom, from(#BC699F), to(#F98AD1));
-    background: -moz-linear-gradient(270deg, #BC699F, #F98AD1);
-    background: linear-gradient(270deg, #BC699F, #F98AD1);
+    background: linear-gradient(270deg, #7A37A1, #6A1A99);
   }
   .purple:active {
-    color: #fcd3a5;
-    background: -webkit-gradient(linear, left top, left bottom, from(#662D91), to(#A022A0));
-    background: -moz-linear-gradient(270deg, #662D91, #A022A0);
-    background: linear-gradient(270deg, #662D91, #A022A0);
+    background: linear-gradient(270deg, #510E79, #6A1A99);
   }
 
   #css-syntax-select {
     font-size: 1em;
     border-radius: .5em;
     text-shadow: 0 1px 1px rgba(0, 0, 0, .3);
-    background: #A022A0;
+    background: #510E79;
     padding: 0.2em;
     outline: none;
   }
@@ -196,7 +194,7 @@ MIT License : http://adampritchard.mit-license.org/
   input[type="text"] {
     width: 90%;
     font-size: 1em;
-    background-color: rgba(249, 138, 209, 0.35);
+    background-color: #F6E6FF;
   }
 
   .warning {
@@ -243,9 +241,7 @@ MIT License : http://adampritchard.mit-license.org/
 
   .changelist-new {
     border-radius: 5px;
-    background: -webkit-gradient(linear, left center, right center, from(rgb(227, 214, 238)), to(rgb(255,255,255)));
-    background: -moz-linear-gradient(90deg, rgb(227, 214, 238), rgb(255,255,255));
-    background: linear-gradient(90deg, rgb(227, 214, 238), rgb(255,255,255));
+    background: linear-gradient(90deg, #E7D7F1, rgb(255,255,255));
     padding-left: 0.5em;
     padding-right: 0.5em;
     padding-bottom: 0.1em;
@@ -253,7 +249,7 @@ MIT License : http://adampritchard.mit-license.org/
 
   .changelist-new h2:first-child {
     color: #FFF;
-    text-shadow: 1px 1px 2px black, 0 0 1em rgb(132, 41, 209), 0 0 0.2em rgb(132, 41, 209);
+    text-shadow: 1px 1px 2px black, 0 0 1em #510E79, 0 0 0.2em #510E79;
     margin-bottom: 0;
   }
 
@@ -264,7 +260,7 @@ MIT License : http://adampritchard.mit-license.org/
 
   hr {
     border: 0;
-    border-top: 1px dashed #482168;
+    border-top: 1px dashed #945AB7;
     width: 90%;
   }
 
@@ -288,8 +284,6 @@ MIT License : http://adampritchard.mit-license.org/
 
   /* Custom PayPal button styles from http://visitsteve.com/made/diy-paypal-buttons/ */
   .paypal-button {
-    width: 150px;
-    height: 40px;
     color: #2e3192;
     text-decoration: none;
     text-align: center;
@@ -297,15 +291,9 @@ MIT License : http://adampritchard.mit-license.org/
 
     /* BACKGROUND GRADIENTS */
     background: #FEE1A5;
-    background: -moz-linear-gradient(top, #FFF, #FEE1A5 50%, #FFB829 51%,
-      #FEE1A5 95%, #FEE1A5);
-    background: -webkit-gradient(linear, left top, left bottom,
-      color-stop(0, #FFF), color-stop(.5, #FEE1A5), color-stop(.51, #FFB829),
-      color-stop(.95, #FEE1A5), color-stop(.96, #FEE1A5), to(#FEE1A5));
+    background: linear-gradient(to bottom, #FFF, #FEE1A5 50%, #FFB829 51%, #FEE1A5 95%, #FEE1A5);
 
     /* BORDER RADIUS */
-    -moz-border-radius: 18px;
-    -webkit-border-radius: 18px;
     border-radius: 18px;
 
     border-bottom: 1px solid #FFF;
@@ -318,27 +306,19 @@ MIT License : http://adampritchard.mit-license.org/
     text-shadow: 0px 1px 1px white;
 
     /* BOX SHADOW */
-    -moz-box-shadow: 0 1px 3px #777;
-    -webkit-box-shadow: 0 1px 3px #777;
     box-shadow: 0 1px 3px #777;
-    font: italic bold 30px/38px helvetica, arial;
+    font: italic bold 20px/28px helvetica, arial;
   }
   /* WHILE HOVERED */
   .paypal-button:hover {
     background: #FEE1A5;
-    background: -moz-linear-gradient(top, #FFF, #FEE1A5 50%,
-      #FFB829 51%, #FEE1A5 95%, #FEE1A5);
-    background: -webkit-gradient(linear, left top, left bottom,
-      color-stop(0, #FFF), color-stop(.5, #FEE1A5), color-stop(.51, #FFB829),
-      color-stop(.95, #FEE1A5), color-stop(.96, #FEE1A5), to(#FEE1A5));
-    -moz-box-shadow: 0 1px 2px black;
-    -webkit-box-shadow: 0 1px 2px black;
+    background: linear-gradient(to bottom, #FFF, #FEE1A5 50%, #FFB829 51%, #FEE1A5 95%, #FEE1A5);
+    box-shadow: 0 1px 2px black;
     cursor: pointer;
   }
   /* WHILE BEING CLICKED */
   .paypal-button:active {
-    -moz-box-shadow: 0 2px 6px black;
-    -webkit-box-shadow: 0 2px 6px black;
+    box-shadow: 0 2px 6px black;
   }
   </style>
 </head>
@@ -347,31 +327,31 @@ MIT License : http://adampritchard.mit-license.org/
 
   <header id="pagehead" class="pagehead">
     <h1>
-      <img src="images/icon48.png"/>
-      Markdown Here Options
+      <img class="text-align" src="images/icon96.png"/>
+      <span data-i18n="page_title">Markdown Here Options</span>
     </h1>
   </header>
 
   <div class="horiz-groupset">
     <div id="usage" class="control-group">
-      <div class="section-title">
+      <div class="section-title" data-i18n="basic_usage">
         Basic Usage
       </div>
       <div>
         <ol>
-          <li id="need-page-reload">
-            Reload your email web page or restart your web browser.
+          <li id="need-page-reload" data-i18n="reload_restart">
+            After installing or upgrading, reload your email web page or restart your web browser.
           </li>
-          <li>
+          <li data-i18n="start_new_message">
             Start a new email message.
           </li>
-          <li>
-            Type some Markdown into the email.<br/>Try this: <code>*Hello* `Markdown` **Here**!</code>
+          <li data-i18n="type_some_markdown">
+            Type some Markdown into the email.<br/>Try this: <code>_Hello_ `Markdown` **Here**!</code>
           </li>
-          <li>
-            Right-click in the email and then click "Markdown Toggle". (Or click the <img src="images/icon16.png"/> button on the toolbar.<span class="hotkey-display-wrapper"> Or press <span class="hotkey-display"><kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>M</kbd></span></span>)
+          <li data-i18n="click_toggle">
+            Right-click in the email and then click "Markdown Toggle". (Or click the <img class="text-align" src="images/icon32-button-monochrome.png"/> button on the toolbar.<span class="hotkey-display-wrapper"> Or press <span class="hotkey-display"><kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>M</kbd></span></span>)
           </li>
-          <li>
+          <li data-i18n="pretty_cool">
             The message should now look pretty cool. Send it to your friends!
           </li>
         </ol>
@@ -379,24 +359,24 @@ MIT License : http://adampritchard.mit-license.org/
     </div>
 
     <div id="resources" class="control-group">
-      <div class="section-title">
+      <div class="section-title" data-i18n="resources_title">
         Resources and Links
       </div>
       <div>
         <ul>
-          <li>
+          <li data-i18n="resources_cheatsheet_link">
             If you're new to Markdown, the <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Here-Cheatsheet" target="_blank">Markdown Here Cheatsheet</a> will make you a prostar.
           </li>
-          <li>
+          <li data-i18n="advanced_usage">
             For lots more info and advanced usage, see the <a href="https://github.com/adam-p/markdown-here" target="_blank">Markdown Here project page</a>. You should also explore the options below.
           </li>
-          <li>
+          <li data-i18n="ggroup">
             Ask a question, start a discussion, or just say hi in the <a href="https://groups.google.com/forum/?fromgroups=#!forum/markdown-here" target="_blank">markdown-here Google Group</a>.
           </li>
-          <li>
+          <li data-i18n="mdh_wiki">
             Visit the <a href="https://github.com/adam-p/markdown-here/wiki" target="_blank">Markdown Here wiki</a> for info about <a href="https://github.com/adam-p/markdown-here/wiki/Compatibility" target="_blank">where else MDH works</a> and more <a href="https://github.com/adam-p/markdown-here/wiki/Tips-and-Tricks" target="_blank">tips and tricks</a>.
           </li>
-          <li>
+          <li data-i18n="next_steps">
             If you're interested in what the future holds for Markdown Here, check out the <a href="https://github.com/adam-p/markdown-here#next-steps" target="_blank">Next Steps section</a> of the README.
           </li>
         </ul>
@@ -404,10 +384,10 @@ MIT License : http://adampritchard.mit-license.org/
         <hr/>
 
         <div>
-          <span class="donate-plea donate-plea-hidden" id="dp1">Once you decide Markdown Here is pretty sweet, please help me to buy some flowers for my wife so she's not too upset about how much time I spend working on it. <strong>Thank you!</strong></span>
-          <span class="donate-plea donate-plea-hidden" id="dp2"><strong>Help make Markdown Here better!</strong></span>
-          <span class="donate-plea donate-plea-hidden" id="dp3"><strong>Help support the development of Markdown Here!</strong></span>
-          <span class="donate-plea donate-plea-hidden" id="dp4">You know what makes it easier to keep Markdown Here working on Chrome, Firefox, Thunderbird, Postbox, Safari, Opera, Gmail, Yahoo, Hotmail, Blogger, Evernote, etc.? <strong>Coffee!</strong></span>
+          <span class="donate-plea donate-plea-hidden" id="dp1" data-i18n="donate_plea_1">Once you decide Markdown Here is pretty sweet, please help me to buy some flowers for my wife so she's not too upset about how much time I spend working on it. <strong>Thank you!</strong></span>
+          <span class="donate-plea donate-plea-hidden" id="dp2" data-i18n="donate_plea_2"><strong>Help make Markdown Here better!</strong></span>
+          <span class="donate-plea donate-plea-hidden" id="dp3" data-i18n="donate_plea_3"><strong>Help support the development of Markdown Here!</strong></span>
+          <span class="donate-plea donate-plea-hidden" id="dp4" data-i18n="donate_plea_4">You know what makes it easier to keep Markdown Here working on Chrome, Firefox, Thunderbird, Postbox, Safari, Opera, Gmail, Yahoo, Hotmail, Blogger, Evernote, etc.? <strong>Coffee!</strong></span>
 
           <div id="donate-buttons">
             <form style="display:inline" action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
@@ -420,12 +400,10 @@ MIT License : http://adampritchard.mit-license.org/
             <input type="hidden" name="bn" value="PP-DonationsBF:btn_donate_LG.gif:NonHosted"/>
             <img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1"/>
 
-            <input id="paypal-submit-css" class="paypal-button" type="submit" value="Donate" alt="PayPal - The safer, easier way to pay online!"/>
+            <input id="paypal-submit-css" class="paypal-button" type="submit" value="Donate with PayPal" alt="PayPal - The safer, easier way to pay online!"/>
             </form>
 
-            <a style="text-decoration: none;" href="https://flattr.com/submit/auto?user_id=adam-p&url=http%3A%2F%2Fwww.markdown-here.com&title=Markdown%20Here&description=Browser%20(and%20other%20stuff)%20extension%20that%20lets%20you%20write%20email%20(and%20other%20stuff)%20in%20Markdown." target="_blank"><img src="https://api.flattr.com/button/flattr-badge-large.png"/></a>
-
-            <a href="http://markdown-here.com/about.html" target="_blank">
+            <a href="http://markdown-here.com/about.html" target="_blank" data-i18n="other_donation_options">
               Other donation options
             </a>
 
@@ -440,28 +418,28 @@ MIT License : http://adampritchard.mit-license.org/
     <div class="horiz-groupset">
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="primary_css_title">
           Primary Styling CSS
         </div>
         <div class="stretch">
           <textarea id="css-edit" wrap="off"></textarea>
         </div>
         <div>
-          <button id="reset-button" class="button purple">
+          <button id="reset-button" class="button purple" data-i18n="reset_primary_css">
             Reset to Default
           </button>
         </div>
       </div>
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="syntax_highlighting_css_title">
           Syntax Highlighting CSS
         </div>
         <div class="stretch">
           <textarea id="css-syntax-edit" wrap="off"></textarea>
         </div>
         <div>
-          Theme:
+          <span data-i18n="syntax_highlighting_theme_label">Theme:</span>
           <select class="purple" id="css-syntax-select"></select>
         </div>
       </div>
@@ -471,7 +449,7 @@ MIT License : http://adampritchard.mit-license.org/
     <div class="horiz-groupset">
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="preview_title">
           Preview
         </div>
         <div class="stretch iframe-container">
@@ -480,22 +458,21 @@ MIT License : http://adampritchard.mit-license.org/
           </iframe>
         </div>
         <div>
-          <button id="markdown-toggle-button" class="button purple">
+          <button id="markdown-toggle-button" class="button purple" data-i18n="markdown_toggle_button_text">
             Markdown Toggle
           </button>
         </div>
       </div>
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="notes_title">
           Notes
         </div>
         <div id="notes">
           <ul>
-            <li>Changes are automatically saved and synchronized (if sync is enabled in your browser).</li>
-            <li>The syntax highlighting styles are applied after the primary styling, and so take precedence.</li>
-            <li>Some email editors and browsers impose their own styles. Those may not be apparent here.</li>
-            <li>Some of the syntax highlighting themes originally had background images that have been removed.</li>
+            <li data-i18n="note_options_sync">Changes are automatically saved and synchronized (if sync is enabled in your browser).</li>
+            <li data-i18n="note_syntax_styles_after_primary">The syntax highlighting styles are applied after the primary styling, and so take precedence.</li>
+            <li data-i18n="note_default_client_styles">Some email editors and browsers impose their own styles. Those may not be apparent here.</li>
           </ul>
         </div>
       </div>
@@ -505,7 +482,7 @@ MIT License : http://adampritchard.mit-license.org/
     <div class="horiz-groupset">
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="tex_math_title">
           TeX Mathematical Formulae Support
         </div>
 
@@ -516,46 +493,46 @@ MIT License : http://adampritchard.mit-license.org/
 
         <div>
           <button id="math-reset-button" class="button purple">
-            Reset to Default
+            <span data-i18n="tex_math_reset_button">Reset to Default</span>
           </button>
         </div>
 
         <div id="notes">
           <p>
-            <strong>Privacy Issues</strong>:
+            <span data-i18n="tex_math_privacy_heading"><strong>Privacy Issues:</strong></span>
             <ul>
-              <li>
-                To generate the image for the formula, a request is sent to Google. That effectively means that you are sharing your formula with Google. It also means that recipients of your message will be making a request to Google to have the image rendered. That's why this option is disabled by default.
+              <li data-i18n="tex_math_privacy_issue_1">
+                To generate the image for the formula, a request is sent to Google. That effectively means that you are sharing your formula with Google. It also means that recipients of your message will be making a request to Google to have the image rendered.
               </li>
-              <li>
+              <li data-i18n="tex_math_privacy_issue_2">
                 If you customize the formula rendering tag, you should use a secure (https://) path. Not all rendering services provide a secure option.
               </li>
             </ul>
           </p>
 
           <p>
-            <strong>Customization and Use</strong>:
+            <span data-i18n="tex_math_customization_heading"><strong>Customization and Use:</strong></span>
             <ul>
-              <li>
-                If this feature is enabled, text between dollar signs -- <code>$</code> -- will be interpreted as mathematical formulae. For example, <code>$\Delta$</code> would be rendered as a delta symbol.
+              <li data-i18n="tex_math_customization_1">
+                If this feature is enabled, text between dollar signs — <code>$</code> — will be interpreted as mathematical formulae. For example, <code>$\Delta$</code> would be rendered as a delta symbol.
               </li>
-              <li>
+              <li data-i18n="tex_math_customization_2">
                 For render customization options, see the <a href="https://developers.google.com/chart/infographics/docs/formulas" target="_blank">Google Charts documentation</a> for this service.
               </li>
-              <li>
+              <li data-i18n="tex_math_customization_3">
                 A good resource for creating TeX formulae is the <a href="https://www.codecogs.com/latex/about.php" target="_blank">CodeCogs Equation Editor</a>.
               </li>
-              <li>
+              <li data-i18n="tex_math_customization_4">
                 Formulae are rendered to images, so email recipients will have to enable images to be shown to see the rendering.
               </li>
-              <li>
+              <li data-i18n="tex_math_customization_5">
                 If you customize the rendering tag, you can (and should) use either or both of <code>{mathcode}</code> and <code>{urlmathcode}</code> as placeholders.
                 <ul>
-                  <li><code>{mathcode}</code>: The text between the <code>$</code> symbols -- i.e., the raw TeX formula; like <code>\Delta</code>.</li>
-                  <li><code>{urlmathcode}</code>: The URL-encoded form of the TeX formula; like <code>%5CDelta</code>.</li>
+                  <li data-i18n="tex_math_customization_5_1"><code>{mathcode}</code>: The text between the <code>$</code> symbols — i.e., the raw TeX formula; like <code>\Delta</code>.</li>
+                  <li data-i18n="tex_math_customization_5_2"><code>{urlmathcode}</code>: The URL-encoded form of the TeX formula; like <code>%5CDelta</code>.</li>
                 </ul>
               </li>
-              <li>
+              <li data-i18n="tex_math_customization_6">
                 If you customize the <code>&lt;img&gt;</code> tag, you should include an <code>alt</code> attribute that has as human-readable a value as possible, like <code>{mathcode}</code>. This value of this attribute will be used for the plaintext version of the email (when sent from Gmail and Thunderbird), and used by screen readers for sight-impaired recipients.
               </li>
             </ul>
@@ -565,36 +542,36 @@ MIT License : http://adampritchard.mit-license.org/
       </div>
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="hotkey_title">
           Hotkey (aka keyboard shortcut)
         </div>
         <div>
-          <input type="checkbox" id="hotkey-shift"/><label for="hotkey-shift">SHIFT</label>
-          &nbsp;+&nbsp;
-          <input type="checkbox" id="hotkey-ctrl"/><label for="hotkey-ctrl">CTRL</label>
-          &nbsp;+&nbsp;
-          <input type="checkbox" id="hotkey-alt"/><label for="hotkey-alt">ALT</label>
-          &nbsp;+&nbsp;
+          <input type="checkbox" id="hotkey-shift"/><label for="hotkey-shift" data-i18n="hotkey_shift_key">SHIFT</label>
+          &nbsp;<span data-i18n="hotkey_plus">+</span>&nbsp;
+          <input type="checkbox" id="hotkey-ctrl"/><label for="hotkey-ctrl" data-i18n="hotkey_ctrl_key">CTRL</label>
+          &nbsp;<span data-i18n="hotkey_plus">+</span>&nbsp;
+          <input type="checkbox" id="hotkey-alt"/><label for="hotkey-alt" data-i18n="hotkey_alt_key">ALT</label>
+          &nbsp;<span data-i18n="hotkey_plus">+</span>&nbsp;
           <input type="text" id="hotkey-key" maxlength="1" placeholder="KEY" style="width: 3em;"/>
         </div>
-        <div id="hotkey-key-warning" class="warning hidden">
+        <div id="hotkey-key-warning" class="warning hidden" data-i18n="hotkey_warning">
           Is the key an alphanumeric value?
         </div>
         <div id="notes">
           <ul>
-            <li>
+            <li data-i18n="hotkey_note_1">
               Chrome: You must reload your email web page for the new hotkey setting to take effect.
             </li>
-            <li>
+            <li data-i18n="hotkey_note_2">
               Firefox and Thunderbird: You must restart the application for the new hotkey setting to take effect.
             </li>
-            <li>
+            <li data-i18n="hotkey_note_3">
               You must use an alphanumeric key for the shortcut (varies by language and keyboard).
             </li>
-            <li>
+            <li data-i18n="hotkey_note_4">
               The Windows key and the OS X &#8984; key cannot be used in the shortcut.
             </li>
-            <li>
+            <li data-i18n="hotkey_note_5">
               To disable the use of this hotkey, leave the "key" text box empty.
             </li>
           </ul>
@@ -614,33 +591,61 @@ MIT License : http://adampritchard.mit-license.org/
     <div class="horiz-groupset">
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="advanced_title">
           Advanced and Miscellaneous
         </div>
         <div>
-          <input type="checkbox" id="forgot-to-render-check-enabled"/><label for="forgot-to-render-check-enabled"><b>Enable "forgot-to-render" check.</b></label>
+          <input type="checkbox" id="forgot-to-render-check-enabled"/>
+          <label for="forgot-to-render-check-enabled" data-i18n="forgot_to_render_label">
+            <b>Enable "forgot-to-render" check.</b>
+          </label>
           <div class="extra-description">
-            <p>
-            Currently only supported in the Gmail web interface and Thunderbird (and Postbox and Icedove).
+            <p data-i18n="forgot_to_render_1">
+              Currently only supported in the Gmail web interface and Thunderbird (and Postbox and Icedove).
             </p>
-            <p>
+            <p data-i18n="forgot_to_render_2">
               When you send an email, this checks the content to see if it looks like you wrote it in Markdown, but forgot to render it (i.e., click "Markdown Toggle") before sending. This may need to be disabled if it interferes with your ability to send email.
             </p>
-            <p>
-              If you find yourself disabling this, <em>please</em> let me know why and how it could be better. Create <a href="https://groups.google.com/forum/#!forum/markdown-here" target="_blank">a post on the "markdown-here" Google Group</a> or <a href="https://github.com/adam-p/markdown-here/issues" target="_blank">an issue in the Github project</a>. Thanks.
+            <p data-i18n="forgot_to_render_4">
+              If this feature stops working for you, please let us know by posting to the <a href="https://groups.google.com/group/markdown-here" target="_blank">"markdown-here" Google Group</a> or creating <a href="https://github.com/adam-p/markdown-here/issues" target="_blank">an issue in the Github project</a>. (Hooking into the email sending web UI is brittle and will sometimes break.)
             </p>
           </div>
+        </div>
+        <hr/>
+        <div>
+          <input type="checkbox" id="header-anchors-enabled"/>
+          <label for="header-anchors-enabled" data-i18n="header_anchors_enabled_label">
+            <b>Enable automatic header anchors.</b>
+          </label>
+          <div class="extra-description">
+            <p data-i18n="header_anchors_enabled_1">
+              This is great if you want to put a table of contents or other internal links into your content. <a href="https://github.com/adam-p/markdown-here/wiki/Tips-and-Tricks#wiki-header-anchors" target="_blank">Learn about how to use it in the MDH wiki.</a>
+            </p>
+            <p data-i18n="header_anchors_enabled_2">
+              It's disabled by default because it <a href="https://github.com/adam-p/markdown-here/issues/155" target="_blank">creates visual noise in Thunderbird</a>. (And most people probably won't use the feature.)
+            </p>
+          </div>
+        </div>
+        <hr/>
+        <div>
+          <input type="checkbox" id="gfm-line-breaks-enabled"/>
+          <label for="gfm-line-breaks-enabled" data-i18n="gfm_line_breaks_enabled_label">
+            <b>Enable GFM line breaks.</b>
+          </label>
         </div>
         <hr/>
       </div>
 
       <div class="control-group">
-        <div class="section-title">
+        <div class="section-title" data-i18n="contributing_title">
           Contributing
         </div>
         <div>
-          <p>
-            <strong>If you have ever put a code block into an email, then you can help make Markdown Here better.</strong> <a href="https://github.com/adam-p/markdown-here/blob/development/CONTRIBUTE.md" target="_blank">CONTRIBUTE.md</a>
+          <p data-i18n="contributing_1">
+            <strong>If you have ever put a code block into an email, then you can help make Markdown Here better.</strong> <a href="https://github.com/adam-p/markdown-here/blob/master/CONTRIBUTING.md" target="_blank">CONTRIBUTING.md</a>
+          </p>
+          <p data-i18n="contributing_2">
+            Help make Markdown Here available in your language. <a href="https://github.com/adam-p/markdown-here/blob/master/CONTRIBUTING.md#translation" target="_blank">Translations are welcome.</a>
           </p>
         </div>
       </div>
@@ -649,17 +654,17 @@ MIT License : http://adampritchard.mit-license.org/
   </div><!-- /#extra-options-container -->
 
   <footer>
-    <p>
+    <p data-i18n="footer_1">
       <em>Markdown Here</em> is open source. To ask questions, report bugs, request features, or contribute, visit the <a target="_blank" href="https://github.com/adam-p/markdown-here">Github project page</a> or the <a target="_blank" href="https://groups.google.com/forum/?fromgroups=#!forum/markdown-here">"markdown-here" Google Group</a>.
     </p>
-    <p>
+    <p data-i18n="footer_2">
       Created by <a target="_blank" href="http://adam-p.github.com/">Adam Pritchard</a>.
     </p>
   </footer>
 
   <div id="tests-link"><a href="./test/index.html"><img title="Run tests" src="images/icon16.png"/></a></div>
 
-  <div id="saved-msg">Changes saved</div>
+  <div id="saved-msg" data-i18n="changes_saved">Changes saved</div>
 
 </body>
 
